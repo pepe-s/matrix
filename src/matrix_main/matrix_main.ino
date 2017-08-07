@@ -1,85 +1,60 @@
-/*************************************************************************
-* Matrix LED 
-* 2017/07/28
-* Teppei
-*************************************************************************/
+/*************************************************** 
+  2017.08.04 teppei
+  8*16のマトリクスLEDにテキストをスクロール表示する
+ ****************************************************/
+
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include "Adafruit_LEDBackpack.h"
+
+Adafruit_8x16minimatrix matrix = Adafruit_8x16minimatrix();
 
 
-/*------------------------------------------------------------------------
-*         definition
-------------------------------------------------------------------------*/
-#define DATAPIN 9     // 74HC595のDSへ
-#define LATCHPIN 12   // 74HC595のST_CPへ
-#define CLOCKPIN 11   // 74HC595のSH_CPへ
-
-/*------------------------------------------------------------------------
-*         variable
-------------------------------------------------------------------------*/
+// 定数
+String VIEW_TEXT1 = "P-Robo 204"; // 表示するテキスト (20文字まで)
+String VIEW_TEXT2 = "EXO WHEEL";  // 表示するテキスト2　(20文字まで)
+int8_t TEXT1_NUM = 10;
+int8_t TEXT2_NUM = 9;
 
 
-/*------------------------------------------------------------------------
-*         function
-------------------------------------------------------------------------*/
+// グローバル変数
+int8_t scroll1 = (-1) * (TEXT1_NUM * 5 + 16);
+int8_t scroll2 = (-1) * (TEXT2_NUM * 5 + 16);
 
-/*----------------------------------------
-* シフトレジスタに出力する
-----------------------------------------*/
-void MyShiftOut( int dataPin, int clockPin, int bit, unsigned long val, bool rev)
-{
-  for( int i = 0; i < bit; i++ )
-  {
-    if(rev)
-      digitalWrite(dataPin, !(val & (1L << i)));  //反転
-    else
-      digitalWrite(dataPin, !!(val & (1L << i)));
-
-    digitalWrite(clockPin, HIGH);
-    digitalWrite(clockPin, LOW);
-  }
-}
-
-/*----------------------------------------
-* 指定した番号のLEDを点灯させる
-----------------------------------------*/
-void Led_ON(int num){
-  unsigned long row = 0;
-  unsigned long col = 0;
-
-  //アノードのピンを算出
-  col = num / 8;
-  row = num % 8 ;
+// 設定
+void setup() {
+  //while (!Serial);
+  Serial.begin(9600);
+  Serial.println("16x8 LED Mini Matrix Test");
   
-  // シフト演算を使って点灯するLEDを選択
-  digitalWrite(LATCHPIN, LOW);    // 送信中はLATCHPINをLOW
-  MyShiftOut(DATAPIN, CLOCKPIN, 8, 1L << col, true);  //列を送信
-  MyShiftOut(DATAPIN, CLOCKPIN, 8, 1L << row, false);  //行を送信
-  digitalWrite(LATCHPIN, HIGH);   // 送信後はLATCHPINをHIGHに戻す
-}
+  matrix.begin(0x70);  // pass in the address
+  matrix.setTextSize(1);
+  matrix.setTextWrap(false);
+  matrix.setTextColor(LED_ON);
+  matrix.setRotation(1);
 
-/*------------------------------------------------------------------------
-*         main
-------------------------------------------------------------------------*/
-
-/*----------------------------------------
-* setup
-----------------------------------------*/
-void setup()
-{
-  pinMode(DATAPIN, OUTPUT);
-  pinMode(LATCHPIN, OUTPUT);
-  pinMode(CLOCKPIN, OUTPUT);
-}
-
-/*----------------------------------------
-* loop
-----------------------------------------*/
-void loop()
-{
-  for(int i=1; i<64; i++){
-    ledTest(i);
-    delay(50);
-  }
   
 }
 
+// メインループ
+void loop() {
+  
+  //テキスト１の表示
+  for (int8_t x=16; x>= scroll1; x--) {
+    matrix.clear();
+    matrix.setCursor(x,0);
+    matrix.print(VIEW_TEXT1);
+    matrix.writeDisplay();
+    delay(100);
+  }
 
+  // テキスト２の表示
+  for (int8_t x=16; x>= scroll2; x--) {
+    matrix.clear();
+    matrix.setCursor(x,0);
+    matrix.print(VIEW_TEXT2);
+    matrix.writeDisplay();
+    delay(100);
+  }
+
+}
